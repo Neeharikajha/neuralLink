@@ -1,35 +1,39 @@
-// export default function App() {
-//   return (
-//     <div className="w-screen h-screen bg-pink-500 flex items-center justify-center">
-//       <h1 className="text-3xl font-bold text-blue-500 underline">
-//         Tailwind Working 🚀
-//       </h1>
-//     </div>
-//   );
-// }
-
-
-// src/App.jsx
 import React from "react";
-import Navbar from "./components/common-components/Navbar";
-import Footer from "./components/common-components/Footer";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Sidebar from "./components/common-components/Sidebar";
+import Landing from "./pages/Landing";
+import Dashboard from "./pages/Dashboard";
+import FindTeammates from "./pages/FindTeammates";
+import JoinProject from "./pages/JoinProject";
+import Chat from "./pages/Chat";
 
 function App() {
   return (
-    <div className="w-screen h-screen flex flex-col bg-pink-500">
-      {/* Navbar */}
-      <Navbar />
+    <Router>
+      <Routes>
+        {/* Landing page without Sidebar */}
+        <Route path="/" element={<Landing />} />
 
-      {/* Main content */}
-      <main className="flex-grow flex items-center justify-center">
-        <h1 className="text-3xl font-bold text-blue-500 underline">
-          Tailwind Working 🚀
-        </h1>
-      </main>
-
-      {/* Footer */}
-      <Footer />
-    </div>
+        {/* Pages WITH Sidebar */}
+        <Route
+          path="/dashboard/*"
+          element={
+            <div className="flex w-screen h-screen">
+              <Sidebar />
+              <div className="flex-1 ml-0 lg:ml-72 overflow-auto bg-white">
+                <Routes>
+                  <Route path="" element={<Dashboard />} />
+                  <Route path="find" element={<FindTeammates />} />
+                  <Route path="join-project" element={<JoinProject />} />
+                  <Route path="chat" element={<Chat />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+              </div>
+            </div>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
