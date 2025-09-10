@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 // Signup schema: role fixed to customer
 const signupSchema = Joi.object({
     phone: Joi.string().required().min(10),
+    email: Joi.string().email().optional(),
     password: Joi.string().required(),
     role: Joi.string().valid("customer").required() // farmer removed
 }); 
@@ -24,13 +25,15 @@ export const signup = async (req, res) => {
         return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { phone, password, role } = req.body; // role will always be "customer"
+    const { phone, email, password, role } = req.body; // role will always be "customer"
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new Auth({
             phone,
+            email,
             password: hashedPassword,
-            role
+            role,
+            authProvider: 'local'
         });
         const savedUser = await newUser.save();
         res.status(200).json({ message: "User registered successfully", user: savedUser });
@@ -62,7 +65,7 @@ export const login = async (req, res) => {
         res.status(200).json({
             message: "Login successful",
             token,
-            user: { id: user._id, phone: user.phone, role: user.role }
+            user: { id: user._id, phone: user.phone, email: user.email, role: user.role, authProvider: user.authProvider }
         });
     } catch (err) {
         res.status(500).json({ message: "Login failed", error: err.message });
