@@ -7,7 +7,7 @@ import {
     updateProject,
     deleteProject
 } from "../controllers/project.js";
-import { authenticateToken } from "../middleware/auth.js";
+import { protect } from "../middleware/auth.js";  // ✅ fixed import
 
 const router = express.Router();
 
@@ -16,7 +16,7 @@ router.get("/", getAllProjects);
 router.get("/:id", getProjectById);
 
 // Protected routes
-router.use(authenticateToken);
+router.use(protect);   // ✅ use protect
 
 router.post("/", createProject);
 router.get("/user/my-projects", getUserProjects);
