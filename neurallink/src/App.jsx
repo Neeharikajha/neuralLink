@@ -53,6 +53,7 @@ import FindTeammates from "./pages/FindTeammates";
 import JoinProject from "./pages/JoinProject";
 import Chat from "./pages/Chat";
 import AdminDashboard from "./pages/AdminDashboard";
+import Profile from "./pages/Profile";
 import Login from "./components/common-components/Login";
 import Signup from "./components/common-components/Signup";
 import GitHubCallback from "./pages/GitHubCallback";
@@ -92,6 +93,7 @@ export default function App() {
             <Route path="join-project" element={<JoinProject />} />
             <Route path="chat" element={<Chat />} />
             <Route path="admin" element={<AdminDashboard />} />
+            <Route path="profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 

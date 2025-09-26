@@ -112,6 +112,7 @@
 
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   FiHome, FiUsers, FiMessageCircle, FiFolderPlus, FiSettings,
   FiMenu, FiX, FiUser, FiLogOut
@@ -126,6 +127,7 @@ const MAIN_MENU = [
 ];
 
 export default function Sidebar() {
+  const { user, githubProfile } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
@@ -198,45 +200,31 @@ export default function Sidebar() {
 
         {/* Profile Section */}
         <div className="px-3 mb-6 relative">
-          <button
+          <Link
+            to="/dashboard/profile"
             className="flex items-center gap-3 w-full px-4 py-3 bg-white/5 hover:bg-white/10 text-gray-200 rounded-xl transition-colors"
-            onClick={() => setProfileOpen(!profileOpen)}
+            onClick={() => setMenuOpen(false)}
           >
-            <div className="bg-gradient-to-r from-pink-400 to-purple-400 rounded-full h-8 w-8 flex items-center justify-center font-bold text-black/90">
-              U
-            </div>
+            {githubProfile?.avatar ? (
+              <img 
+                src={githubProfile.avatar} 
+                alt="Profile" 
+                className="rounded-full h-8 w-8 object-cover"
+              />
+            ) : (
+              <div className="bg-gradient-to-r from-pink-400 to-purple-400 rounded-full h-8 w-8 flex items-center justify-center font-bold text-black/90">
+                {githubProfile?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+            )}
             <div className="flex-1 text-left">
-              <div className="text-sm font-semibold">User</div>
-              <div className="text-xs text-gray-400">View Profile</div>
+              <div className="text-sm font-semibold">
+                {githubProfile?.displayName || githubProfile?.username || user?.email || 'User'}
+              </div>
+              <div className="text-xs text-gray-400">
+                {githubProfile?.username ? `@${githubProfile.username}` : 'View Profile'}
+              </div>
             </div>
-          </button>
-
-          {/* Dropdown */}
-          {profileOpen && (
-            <div className="absolute bottom-16 left-3 w-[calc(100%-1.5rem)] bg-white/10 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden">
-              <Link
-                to="/profile"
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-white/5"
-                onClick={() => {
-                  setProfileOpen(false);
-                  setMenuOpen(false);
-                }}
-              >
-                <FiUser className="h-4 w-4" />
-                Profile
-              </Link>
-              <button
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-white/5 w-full text-left"
-                onClick={() => {
-                  console.log("Logout clicked");
-                  setProfileOpen(false);
-                }}
-              >
-                <FiLogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          )}
+          </Link>
         </div>
       </aside>
     </>

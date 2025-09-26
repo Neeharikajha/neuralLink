@@ -29,7 +29,7 @@ import {
   handleJoinRequest,
   getAllJoinRequests
 } from "../controllers/joinRequest.js";
-import { protect } from "../middleware/auth.js";   // ✅ fixed import
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 

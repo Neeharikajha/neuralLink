@@ -119,6 +119,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
+import ProjectModal from "../components/find/ProjectModal";
+import ProjectCard from "../components/find/ProjectCard";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

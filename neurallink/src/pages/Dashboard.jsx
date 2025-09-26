@@ -5,7 +5,7 @@ import githubService from "../services/githubService";
 import ActiveProjectCard from "../components/dashboard/ActiveProjectCard";
 import TechStacksCard from "../components/dashboard/TechStacksCard";
 import QuickStats from "../components/dashboard/QuickStats";
-import ContributionHeatmap from "../components/dashboard/ContributionHeatmap";
+import RecentActivity from "../components/dashboard/RecentActivity";
 import { Box, CircularProgress, Alert, Button } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
@@ -32,7 +32,7 @@ export default function Dashboard() {
 
       // Load contribution data
       const contributionResponse = await githubService.getContributionData();
-      setContributionData(contributionResponse.data);
+      setContributionData(contributionResponse.data || {});
 
     } catch (err) {
       console.error("Error loading dashboard data:", err);
@@ -143,12 +143,10 @@ export default function Dashboard() {
               progress={62}
             />
 
-            {/* Contribution heatmap replaces old streak card */}
-            <ContributionHeatmap
-              data={contributionData}
-              weeksToShow={26}
-              title="Activity"
-              subtitle="Last 6 months"
+            {/* Recent Activity */}
+            <RecentActivity
+              githubProfile={githubProfile}
+              userScore={userScore}
             />
           </div>
 
