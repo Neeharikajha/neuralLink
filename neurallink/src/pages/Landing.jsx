@@ -1,9 +1,20 @@
 // src/pages/Landing.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { isAuthenticated, loginWithGitHub } = useAuth();
+
+  const handleGetStarted = async () => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    } else {
+      // Redirect to login page for authentication
+      navigate("/login");
+    }
+  };
 
   return (
     <div className="relative w-screen h-screen overflow-hidden flex flex-col items-center justify-center bg-[#0b1020] text-gray-200 p-4">
@@ -52,14 +63,14 @@ export default function Landing() {
 
       {/* CTA */}
       <button
-        onClick={() => navigate("/dashboard")}
+        onClick={handleGetStarted}
         className="px-6 py-3 rounded-lg font-semibold text-white
                    bg-gradient-to-r from-fuchsia-500 to-orange-400
                    hover:from-fuchsia-400 hover:to-orange-300
                    shadow-lg shadow-fuchsia-900/30 border border-white/10
                    backdrop-blur-md transition"
       >
-        Get started
+        {isAuthenticated ? "Go to Dashboard" : "Get started"}
       </button>
     </div>
   );

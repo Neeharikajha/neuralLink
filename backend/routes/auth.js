@@ -3,7 +3,7 @@ import {signup, login} from '../controllers/auth.js';
 import { changePassword } from "../controllers/auth.js";
 import { deleteUser } from "../controllers/auth.js";
 import { protect } from "../middleware/auth.js";
-import { githubCallback, getGitHubProfile, syncGitHubData } from "../controllers/githubAuth.js";
+import { githubCallback, getGitHubProfile, syncGitHubData, getGitHubAuthUrl } from "../controllers/githubAuth.js";
 
 
 const router= express.Router();
@@ -13,6 +13,7 @@ const router= express.Router();
  router.delete('/delete', protect, deleteUser);
 
  // GitHub OAuth routes
+ router.get("/github/auth-url", getGitHubAuthUrl);
  router.get("/github/callback", githubCallback);
  router.get("/github/profile", protect, getGitHubProfile);
  router.post("/github/sync", protect, syncGitHubData);

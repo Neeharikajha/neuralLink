@@ -3,13 +3,34 @@ import Auth from "../models/auth.js";
 import GitHub from "../models/github.js";
 import jwt from "jsonwebtoken";
 
+// Get GitHub OAuth URL
+export const getGitHubAuthUrl = (req, res) => {
+    try {
+        const clientId = process.env.GITHUB_CLIENT_ID;
+        const redirectUri = process.env.GITHUB_REDIRECT_URI || `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/github/callback`;
+        
+        const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email,repo`;
+        
+        res.status(200).json({
+            message: "GitHub auth URL generated successfully",
+            authUrl: githubAuthUrl
+        });
+    } catch (error) {
+        console.error("Error generating GitHub auth URL:", error);
+        res.status(500).json({ message: "Failed to generate GitHub auth URL", error: error.message });
+    }
+};
+
 // GitHub OAuth callback handler
 export const githubCallback = async (req, res) => {
     try {
         const { code } = req.query;
         
         if (!code) {
-            return res.status(400).json({ message: "Authorization code not provided" });
+            // If no code, redirect to frontend with error
+            const frontendUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+            const redirectUrl = `${frontendUrl}/auth/github/callback?error=no_code&message=${encodeURIComponent('Authorization code not provided')}`;
+            return res.redirect(redirectUrl);
         }
 
         // Exchange code for access token
@@ -106,27 +127,17 @@ export const githubCallback = async (req, res) => {
         // Generate JWT token
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "3h" });
 
-        res.status(200).json({
-            message: "GitHub authentication successful",
-            token,
-            user: {
-                id: user._id,
-                email: user.email,
-                role: user.role,
-                authProvider: user.authProvider
-            },
-            githubProfile: {
-                username: githubProfile.username,
-                displayName: githubProfile.displayName,
-                avatar: githubProfile.avatar,
-                publicRepos: githubProfile.publicRepos,
-                followers: githubProfile.followers
-            }
-        });
+        // Redirect to frontend with token
+        const frontendUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        const redirectUrl = `${frontendUrl}/auth/github/callback?token=${token}&success=true`;
+        res.redirect(redirectUrl);
 
     } catch (error) {
         console.error("GitHub authentication error:", error);
-        res.status(500).json({ message: "GitHub authentication failed", error: error.message });
+        // Redirect to frontend with error
+        const frontendUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        const redirectUrl = `${frontendUrl}/auth/github/callback?error=authentication_failed&message=${encodeURIComponent(error.message)}`;
+        res.redirect(redirectUrl);
     }
 };
 

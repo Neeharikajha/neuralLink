@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   FiSend, 
   FiUsers, 
@@ -13,6 +14,7 @@ import {
 } from 'react-icons/fi';
 
 const Chat = () => {
+  const { user, githubProfile, isAuthenticated } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentRoom, setCurrentRoom] = useState(null);
@@ -24,7 +26,6 @@ const Chat = () => {
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDescription, setNewRoomDescription] = useState('');
-  const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   
   const messagesEndRef = useRef(null);
@@ -87,21 +88,8 @@ const Chat = () => {
     }
   }, [token]);
 
-  // Fetch user data and chat rooms
+  // Fetch chat rooms
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/github/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        setUser(response.data.user);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-
     const fetchChatRooms = async () => {
       try {
         const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/chat/rooms`, {
@@ -116,7 +104,6 @@ const Chat = () => {
     };
 
     if (token) {
-      fetchUserData();
       fetchChatRooms();
     }
   }, [token]);
@@ -228,33 +215,33 @@ const Chat = () => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  if (!token) {
+  if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-700 mb-4">Please Login</h2>
-          <p className="text-gray-500">You need to be logged in to access the chat.</p>
+      <div className="flex items-center justify-center h-screen bg-[#0b1020]">
+        <div className="text-center text-gray-200">
+          <h2 className="text-2xl font-bold mb-4">Please Login</h2>
+          <p className="text-gray-400">You need to be logged in to access the chat.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-[#0b1020]">
       {/* Sidebar */}
-      <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-1/3 bg-gray-800 border-r border-gray-700 flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-800">Chat Rooms</h1>
+            <h1 className="text-xl font-bold text-gray-200">Chat Rooms</h1>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setShowCreateRoom(true)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+                className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg"
               >
                 <FiPlus size={20} />
               </button>
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+              <button className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg">
                 <FiMoreVertical size={20} />
               </button>
             </div>
@@ -263,20 +250,20 @@ const Chat = () => {
           {/* Connection Status */}
           <div className="mt-2 flex items-center space-x-2">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-400">
               {isConnected ? 'Connected' : 'Disconnected'}
             </span>
           </div>
         </div>
 
         {/* Search */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-700">
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
               placeholder="Search rooms..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200 placeholder-gray-400"
             />
           </div>
         </div>
@@ -287,8 +274,8 @@ const Chat = () => {
             <div
               key={room._id}
               onClick={() => joinRoom(room)}
-              className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                currentRoom?._id === room._id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+              className={`p-4 border-b border-gray-700 cursor-pointer hover:bg-gray-700 ${
+                currentRoom?._id === room._id ? 'bg-blue-900 border-l-4 border-l-blue-500' : ''
               }`}
             >
               <div className="flex items-center space-x-3">
@@ -296,8 +283,8 @@ const Chat = () => {
                   <FiMessageSquare className="text-white" size={20} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">{room.name}</h3>
-                  <p className="text-xs text-gray-500 truncate">{room.description}</p>
+                  <h3 className="text-sm font-medium text-gray-200 truncate">{room.name}</h3>
+                  <p className="text-xs text-gray-400 truncate">{room.description}</p>
                   <div className="flex items-center space-x-2 mt-1">
                     <FiUsers size={12} className="text-gray-400" />
                     <span className="text-xs text-gray-400">{room.participants.length} members</span>
@@ -309,36 +296,44 @@ const Chat = () => {
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-700">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-gray-600">
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
-              </span>
+            <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+              {githubProfile?.avatar ? (
+                <img 
+                  src={githubProfile.avatar} 
+                  alt="Profile" 
+                  className="w-8 h-8 rounded-full"
+                />
+              ) : (
+                <span className="text-sm font-medium text-gray-300">
+                  {githubProfile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.email || 'User'}
+              <p className="text-sm font-medium text-gray-200 truncate">
+                {githubProfile?.displayName || githubProfile?.username || user?.email || 'User'}
               </p>
-              <p className="text-xs text-gray-500">Online</p>
+              <p className="text-xs text-gray-400">Online</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-gray-900">
         {currentRoom ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-gray-200 bg-white">
+            <div className="p-4 border-b border-gray-700 bg-gray-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">{currentRoom.name}</h2>
-                  <p className="text-sm text-gray-500">{currentRoom.description}</p>
+                  <h2 className="text-lg font-semibold text-gray-200">{currentRoom.name}</h2>
+                  <p className="text-sm text-gray-400">{currentRoom.description}</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-500">{currentRoom.participants.length} members</span>
+                  <span className="text-sm text-gray-400">{currentRoom.participants.length} members</span>
                 </div>
               </div>
             </div>
@@ -354,7 +349,7 @@ const Chat = () => {
                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                       message.senderId._id === user?.id
                         ? 'bg-blue-500 text-white'
-                        : 'bg-white text-gray-800 border border-gray-200'
+                        : 'bg-gray-700 text-gray-200 border border-gray-600'
                     }`}
                   >
                     <div className="flex items-center space-x-2 mb-1">
@@ -373,7 +368,7 @@ const Chat = () => {
               {/* Typing Indicator */}
               {typingUsers.length > 0 && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg">
+                  <div className="bg-gray-700 text-gray-300 px-4 py-2 rounded-lg">
                     <span className="text-sm">
                       {typingUsers.length === 1 ? 'Someone is typing...' : `${typingUsers.length} people are typing...`}
                     </span>
@@ -385,9 +380,9 @@ const Chat = () => {
             </div>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-gray-200 bg-white">
+            <div className="p-4 border-t border-gray-700 bg-gray-800">
               <div className="flex items-center space-x-2">
-                <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+                <button className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg">
                   <FiPaperclip size={20} />
                 </button>
                 <div className="flex-1 relative">
@@ -397,10 +392,10 @@ const Chat = () => {
                     onChange={handleTyping}
                     onKeyPress={handleKeyPress}
                     placeholder="Type a message..."
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200 placeholder-gray-400"
                   />
                 </div>
-                <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+                <button className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg">
                   <FiSmile size={20} />
                 </button>
                 <button
@@ -416,8 +411,8 @@ const Chat = () => {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <FiMessageSquare size={64} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-500 mb-2">Select a chat room</h3>
+              <FiMessageSquare size={64} className="mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-300 mb-2">Select a chat room</h3>
               <p className="text-gray-400">Choose a room from the sidebar to start chatting</p>
             </div>
           </div>
@@ -427,29 +422,29 @@ const Chat = () => {
       {/* Create Room Modal */}
       {showCreateRoom && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Create New Room</h3>
+          <div className="bg-gray-800 rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4 text-gray-200">Create New Room</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Room Name
                 </label>
                 <input
                   type="text"
                   value={newRoomName}
                   onChange={(e) => setNewRoomName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200 placeholder-gray-400"
                   placeholder="Enter room name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Description
                 </label>
                 <textarea
                   value={newRoomDescription}
                   onChange={(e) => setNewRoomDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200 placeholder-gray-400"
                   placeholder="Enter room description"
                   rows={3}
                 />
@@ -458,7 +453,7 @@ const Chat = () => {
             <div className="flex justify-end space-x-2 mt-6">
               <button
                 onClick={() => setShowCreateRoom(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-gray-400 hover:text-gray-200"
               >
                 Cancel
               </button>
