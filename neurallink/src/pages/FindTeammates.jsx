@@ -121,6 +121,7 @@ import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
 import ProjectModal from "../components/find/ProjectModal";
 import ProjectCard from "../components/find/ProjectCard";
+import JoinRequestCard from "../components/find/JoinRequestCard";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -128,12 +129,15 @@ export default function FindTeammates() {
   const { user, githubProfile } = useAuth();
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState([]);
+  const [joinRequests, setJoinRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState('projects'); // 'projects' or 'requests'
 
   // fetch projects on mount
   useEffect(() => {
     fetchProjects();
+    fetchJoinRequests();
   }, []);
 
   const fetchProjects = async () => {
@@ -149,6 +153,15 @@ export default function FindTeammates() {
     }
   };
 
+  const fetchJoinRequests = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/join-requests`);
+      setJoinRequests(response.data.joinRequests);
+    } catch (err) {
+      console.error("Failed to fetch join requests:", err);
+    }
+  };
+
   // submit new project
   async function handleSubmitProject(payload) {
     try {
@@ -160,6 +173,27 @@ export default function FindTeammates() {
       setError("Failed to create project");
     }
   }
+
+  const handleJoinRequest = async (requestId, action, rejectionReason = "") => {
+    try {
+      await axios.put(`${API_BASE_URL}/api/join-requests/${requestId}`, {
+        action,
+        rejectionReason
+      });
+      
+      // Refresh the list
+      await fetchJoinRequests();
+      alert(`Join request ${action}d successfully!`);
+    } catch (error) {
+      console.error(`Failed to ${action} join request:`, error);
+      alert(`Failed to ${action} join request`);
+    }
+  };
+
+  // Filter join requests for projects owned by current user
+  const myProjectRequests = joinRequests.filter(request => 
+    request.project.owner._id === user?.id
+  );
 
   if (loading) {
     return (
@@ -186,18 +220,44 @@ export default function FindTeammates() {
           </p>
         </header>
 
-        {/* CTA */}
-        <div className="mb-6">
+        {/* Tabs */}
+        <div className="mb-6 flex gap-4">
           <button
-            onClick={() => setOpen(true)}
-            className="px-5 py-3 rounded-lg font-semibold text-white
-                       bg-gradient-to-r from-fuchsia-500 to-orange-400
-                       hover:from-fuchsia-400 hover:to-orange-300
-                       border border-white/10 backdrop-blur-md transition"
+            onClick={() => setActiveTab('projects')}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              activeTab === 'projects'
+                ? 'bg-purple-500 text-white'
+                : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
           >
-            Post your project
+            All Projects
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              activeTab === 'requests'
+                ? 'bg-purple-500 text-white'
+                : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            Join Requests ({myProjectRequests.length})
           </button>
         </div>
+
+        {/* CTA for projects tab */}
+        {activeTab === 'projects' && (
+          <div className="mb-6">
+            <button
+              onClick={() => setOpen(true)}
+              className="px-5 py-3 rounded-lg font-semibold text-white
+                         bg-gradient-to-r from-fuchsia-500 to-orange-400
+                         hover:from-fuchsia-400 hover:to-orange-300
+                         border border-white/10 backdrop-blur-md transition"
+            >
+              Post your project
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -205,23 +265,44 @@ export default function FindTeammates() {
           </div>
         )}
 
-        {/* Posted projects as cards */}
-        <div className="space-y-6">
-          {projects.length === 0 && (
-            <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md p-6">
-              <p className="text-gray-400">
-                No projects yet. Use "Post your project" to get started.
-              </p>
-            </div>
-          )}
+        {/* Content based on active tab */}
+        {activeTab === 'projects' ? (
+          <div className="space-y-6">
+            {projects.length === 0 && (
+              <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md p-6">
+                <p className="text-gray-400">
+                  No projects yet. Use "Post your project" to get started.
+                </p>
+              </div>
+            )}
 
-          {projects.map((project) => (
-            <ProjectCard
-              key={project._id}
-              project={project}
-            />
-          ))}
-        </div>
+            {projects.map((project) => (
+              <ProjectCard
+                key={project._id}
+                project={project}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {myProjectRequests.length === 0 ? (
+              <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md p-6">
+                <p className="text-gray-400">
+                  No join requests for your projects yet.
+                </p>
+              </div>
+            ) : (
+              myProjectRequests.map((request) => (
+                <JoinRequestCard
+                  key={request._id}
+                  request={request}
+                  onApprove={(id) => handleJoinRequest(id, 'approve')}
+                  onReject={(id, reason) => handleJoinRequest(id, 'reject', reason)}
+                />
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modal */}

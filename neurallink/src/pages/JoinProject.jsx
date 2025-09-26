@@ -117,7 +117,17 @@ export default function JoinProject() {
           onSortKey={setSortKey}
         />
 
-        <ProjectGrid projects={filteredProjects} />
+        <div className="space-y-6">
+          {filteredProjects.length === 0 ? (
+            <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md p-6">
+              <p className="text-gray-400 text-center">No projects match the current filters.</p>
+            </div>
+          ) : (
+            filteredProjects.map((project) => (
+              <ProjectCard key={project._id} project={project} />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

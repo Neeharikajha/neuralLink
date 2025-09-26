@@ -42,67 +42,45 @@ export const requestToJoin = async (req, res) => {
             return res.status(400).json({ message: "GitHub profile not found. Please connect your GitHub account first." });
         }
 
-        // Get project owner's GitHub profile for compatibility scoring
+        // Get project owner's GitHub profile and current contributors for scoring
         const ownerGitHubProfile = await GitHub.findOne({ userId: project.owner });
+        const currentContributors = await GitHub.find({ 
+            userId: { $in: project.currentContributors } 
+        });
 
-        // Calculate compatibility scores (simplified version)
-        let compatibilityScore = 0;
-        let activityScore = 0;
-        let projectRelevanceScore = 0;
-        let adminCompatibilityScore = 0;
-        let finalScore = 0;
+        // Calculate compatibility scores using ML service
+        let compatibilityScores = {
+            projectCompatibilityScore: 0,
+            teamCompatibilityScore: 0,
+            finalScore: 0
+        };
 
         if (ownerGitHubProfile) {
-            // Calculate basic compatibility based on common languages
-            const requesterLanguages = requesterGitHubProfile.repos
-                .filter(repo => repo.language)
-                .map(repo => repo.language);
-            
-            const projectLanguages = project.techStack;
-            const commonLanguages = requesterLanguages.filter(lang => 
-                projectLanguages.includes(lang)
-            );
-
-            projectRelevanceScore = projectLanguages.length > 0 ? 
-                (commonLanguages.length / projectLanguages.length) * 100 : 0;
-
-            // Calculate admin compatibility
-            const ownerLanguages = ownerGitHubProfile.repos
-                .filter(repo => repo.language)
-                .map(repo => repo.language);
-            
-            const adminCommonLanguages = requesterLanguages.filter(lang => 
-                ownerLanguages.includes(lang)
-            );
-
-            adminCompatibilityScore = ownerLanguages.length > 0 ? 
-                (adminCommonLanguages.length / ownerLanguages.length) * 100 : 0;
-
-            // Activity score based on GitHub stats
-            activityScore = Math.min(
-                (requesterGitHubProfile.publicRepos * 2 + 
-                 requesterGitHubProfile.followers * 0.5 + 
-                 requesterGitHubProfile.following * 0.3), 100
-            );
-
-            // Final score calculation
-            finalScore = (
-                activityScore * 0.4 +
-                projectRelevanceScore * 0.3 +
-                adminCompatibilityScore * 0.3
+            const { calculateCompatibilityScore } = await import('../services/mlService.js');
+            compatibilityScores = await calculateCompatibilityScore(
+                requesterGitHubProfile,
+                project.techStack,
+                ownerGitHubProfile,
+                currentContributors
             );
         }
+
+        // Activity score based on GitHub stats
+        const activityScore = Math.min(
+            (requesterGitHubProfile.publicRepos * 2 + 
+             requesterGitHubProfile.followers * 0.5 + 
+             requesterGitHubProfile.following * 0.3), 100
+        );
 
         const joinRequest = new JoinRequest({
             project: projectId,
             requester: userId,
             requesterGitHubProfile: requesterGitHubProfile._id,
             message,
-            compatibilityScore,
             activityScore,
-            projectRelevanceScore,
-            adminCompatibilityScore,
-            finalScore
+            projectRelevanceScore: compatibilityScores.projectCompatibilityScore,
+            adminCompatibilityScore: compatibilityScores.teamCompatibilityScore,
+            finalScore: compatibilityScores.finalScore
         });
 
         await joinRequest.save();

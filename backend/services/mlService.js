@@ -55,55 +55,86 @@ export const calculateUserScore = async (githubProfile) => {
   }
 };
 
-export const calculateCompatibilityScore = async (userProfile, projectTechStack, adminProfile) => {
+export const calculateCompatibilityScore = async (userProfile, projectTechStack, adminProfile, teamMembers = []) => {
   try {
     // Extract languages from user's repositories
     const userLanguages = userProfile.repos
       .filter(repo => repo.language)
       .map(repo => repo.language);
     
-    // Calculate project relevance
+    // Calculate project compatibility score
     const projectLanguages = projectTechStack || [];
     const commonLanguages = userLanguages.filter(lang => 
       projectLanguages.includes(lang)
     );
     
-    const projectRelevanceScore = projectLanguages.length > 0 ? 
+    const projectCompatibilityScore = projectLanguages.length > 0 ? 
       (commonLanguages.length / projectLanguages.length) * 100 : 0;
     
-    // Calculate admin compatibility
-    const adminLanguages = adminProfile.repos
-      .filter(repo => repo.language)
-      .map(repo => repo.language);
+    // Calculate team compatibility score
+    let teamCompatibilityScore = 0;
+    if (teamMembers.length > 0) {
+      // Calculate average team metrics
+      const teamAvgRepos = teamMembers.reduce((sum, member) => sum + (member.publicRepos || 0), 0) / teamMembers.length;
+      const teamAvgStars = teamMembers.reduce((sum, member) => {
+        const memberStars = member.repos?.reduce((repoSum, repo) => repoSum + (repo.stars || 0), 0) || 0;
+        return sum + memberStars;
+      }, 0) / teamMembers.length;
+      const teamAvgFollowers = teamMembers.reduce((sum, member) => sum + (member.followers || 0), 0) / teamMembers.length;
+      
+      // Calculate user's metrics
+      const userRepos = userProfile.publicRepos || 0;
+      const userStars = userProfile.repos?.reduce((sum, repo) => sum + (repo.stars || 0), 0) || 0;
+      const userFollowers = userProfile.followers || 0;
+      
+      // Calculate compatibility based on similar levels
+      const repoCompatibility = Math.max(0, 100 - Math.abs(userRepos - teamAvgRepos) * 2);
+      const starsCompatibility = Math.max(0, 100 - Math.abs(userStars - teamAvgStars) * 0.1);
+      const followersCompatibility = Math.max(0, 100 - Math.abs(userFollowers - teamAvgFollowers) * 0.5);
+      
+      teamCompatibilityScore = (repoCompatibility + starsCompatibility + followersCompatibility) / 3;
+    } else {
+      // If no team members, use admin profile for team compatibility
+      const adminLanguages = adminProfile.repos
+        .filter(repo => repo.language)
+        .map(repo => repo.language);
+      
+      const adminCommonLanguages = userLanguages.filter(lang => 
+        adminLanguages.includes(lang)
+      );
+      
+      teamCompatibilityScore = adminLanguages.length > 0 ? 
+        (adminCommonLanguages.length / adminLanguages.length) * 100 : 0;
+    }
     
-    const adminCommonLanguages = userLanguages.filter(lang => 
-      adminLanguages.includes(lang)
-    );
-    
-    const adminCompatibilityScore = adminLanguages.length > 0 ? 
-      (adminCommonLanguages.length / adminLanguages.length) * 100 : 0;
-    
-    // Calculate final compatibility score
+    // Calculate final compatibility score (weighted average)
     const finalScore = (
-      projectRelevanceScore * 0.6 +
-      adminCompatibilityScore * 0.4
+      projectCompatibilityScore * 0.6 +
+      teamCompatibilityScore * 0.4
     );
     
     return {
-      projectRelevanceScore,
-      adminCompatibilityScore,
+      projectCompatibilityScore,
+      teamCompatibilityScore,
       finalScore,
       commonLanguages: commonLanguages,
-      adminCommonLanguages: adminCommonLanguages
+      teamMetrics: teamMembers.length > 0 ? {
+        avgRepos: teamMembers.reduce((sum, member) => sum + (member.publicRepos || 0), 0) / teamMembers.length,
+        avgStars: teamMembers.reduce((sum, member) => {
+          const memberStars = member.repos?.reduce((repoSum, repo) => repoSum + (repo.stars || 0), 0) || 0;
+          return sum + memberStars;
+        }, 0) / teamMembers.length,
+        avgFollowers: teamMembers.reduce((sum, member) => sum + (member.followers || 0), 0) / teamMembers.length
+      } : null
     };
   } catch (error) {
     console.error('Error calculating compatibility score:', error);
     return {
-      projectRelevanceScore: 0,
-      adminCompatibilityScore: 0,
+      projectCompatibilityScore: 0,
+      teamCompatibilityScore: 0,
       finalScore: 0,
       commonLanguages: [],
-      adminCommonLanguages: []
+      teamMetrics: null
     };
   }
 };

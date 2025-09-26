@@ -25,10 +25,6 @@ const joinRequestSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    compatibilityScore: {
-        type: Number,
-        required: false
-    },
     activityScore: {
         type: Number,
         required: false
@@ -42,6 +38,14 @@ const joinRequestSchema = new mongoose.Schema({
         required: false
     },
     finalScore: {
+        type: Number,
+        required: false
+    },
+    teamCompatibilityScore: {
+        type: Number,
+        required: false
+    },
+    projectCompatibilityScore: {
         type: Number,
         required: false
     },
