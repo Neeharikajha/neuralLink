@@ -6,70 +6,137 @@ import jwt from "jsonwebtoken";
 
 // Signup schema: role fixed to customer
 const signupSchema = Joi.object({
-    phone: Joi.string().required().min(10),
-    email: Joi.string().email().optional(),
-    password: Joi.string().required(),
-    role: Joi.string().valid("customer").required() // farmer removed
-}); 
+  email: Joi.string().email().required(),
+  password: Joi.string().required(),
+  role: Joi.string().valid("customer").required()
+});
 
 // Login schema remains the same
 const loginSchema = Joi.object({
-    phone: Joi.string().required().min(10),
-    password: Joi.string().required()
+  email: Joi.string().email().required(),
+  password: Joi.string().required()
 });
 
 // SIGNUP
+// export const signup = async (req, res) => {
+//     const { error } = signupSchema.validate(req.body);
+//     if (error) {
+//         return res.status(400).json({ message: error.details[0].message });
+//     }
+
+//     const { phone, email, password, role } = req.body; // role will always be "customer"
+//     try {
+//         const hashedPassword = await bcrypt.hash(password, 10);
+//         const newUser = new Auth({
+//             phone,
+//             email,
+//             password: hashedPassword,
+//             role,
+//             authProvider: 'local'
+//         });
+//         const savedUser = await newUser.save();
+//         res.status(200).json({ message: "User registered successfully", user: savedUser });
+//     } catch (err) {
+//         res.status(500).json({ message: "Signup failed", error: err.message });
+//     }
+// };
+
+// // LOGIN
+// export const login = async (req, res) => {
+//     const { error } = loginSchema.validate(req.body);
+//     if (error) {
+//         return res.status(400).json({ message: error.details[0].message });
+//     }
+
+//     const { phone, password } = req.body;
+//     try {
+//         const user = await Auth.findOne({ phone });
+//         if (!user) {
+//             return res.status(400).json({ message: "User not found" });
+//         }
+
+//         const isMatch = await bcrypt.compare(password, user.password);
+//         if (!isMatch) {
+//             return res.status(400).json({ message: "Invalid password" });
+//         }
+
+//         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "3h" });
+//         res.status(200).json({
+//             message: "Login successful",
+//             token,
+//             user: { id: user._id, phone: user.phone, email: user.email, role: user.role, authProvider: user.authProvider }
+//         });
+//     } catch (err) {
+//         res.status(500).json({ message: "Login failed", error: err.message });
+//     }
+// };
+
 export const signup = async (req, res) => {
+  try {
     const { error } = signupSchema.validate(req.body);
     if (error) {
-        return res.status(400).json({ message: error.details[0].message });
+      return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { phone, email, password, role } = req.body; // role will always be "customer"
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new Auth({
-            phone,
-            email,
-            password: hashedPassword,
-            role,
-            authProvider: 'local'
-        });
-        const savedUser = await newUser.save();
-        res.status(200).json({ message: "User registered successfully", user: savedUser });
-    } catch (err) {
-        res.status(500).json({ message: "Signup failed", error: err.message });
+    const { email, password, role } = req.body;
+
+    // Check if user already exists
+    const existingUser = await Auth.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists with this email" });
     }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new Auth({ email, password: hashedPassword, role });
+    await newUser.save();
+
+    res.status(201).json({ message: "User created successfully" });
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
-// LOGIN
 export const login = async (req, res) => {
+  try {
     const { error } = loginSchema.validate(req.body);
     if (error) {
-        return res.status(400).json({ message: error.details[0].message });
+      return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { phone, password } = req.body;
-    try {
-        const user = await Auth.findOne({ phone });
-        if (!user) {
-            return res.status(400).json({ message: "User not found" });
-        }
+    const { email, password } = req.body;
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid password" });
-        }
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "3h" });
-        res.status(200).json({
-            message: "Login successful",
-            token,
-            user: { id: user._id, phone: user.phone, email: user.email, role: user.role, authProvider: user.authProvider }
-        });
-    } catch (err) {
-        res.status(500).json({ message: "Login failed", error: err.message });
+    // Find user by email
+    const user = await Auth.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: { id: user._id, email: user.email, role: user.role }
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 // CHANGE PASSWORD
