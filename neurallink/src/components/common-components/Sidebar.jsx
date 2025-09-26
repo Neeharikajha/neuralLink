@@ -200,10 +200,9 @@ export default function Sidebar() {
 
         {/* Profile Section */}
         <div className="px-3 mb-6 relative">
-          <Link
-            to="/dashboard/profile"
+          <button
             className="flex items-center gap-3 w-full px-4 py-3 bg-white/5 hover:bg-white/10 text-gray-200 rounded-xl transition-colors"
-            onClick={() => setMenuOpen(false)}
+            onClick={() => setProfileOpen(!profileOpen)}
           >
             {githubProfile?.avatar ? (
               <img 
@@ -224,7 +223,36 @@ export default function Sidebar() {
                 {githubProfile?.username ? `@${githubProfile.username}` : 'View Profile'}
               </div>
             </div>
-          </Link>
+          </button>
+
+          {/* Dropdown */}
+          {profileOpen && (
+            <div className="absolute bottom-16 left-3 w-[calc(100%-1.5rem)] bg-white/10 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden">
+              <Link
+                to="/dashboard/profile"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-white/5"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setMenuOpen(false);
+                }}
+              >
+                <FiUser className="h-4 w-4" />
+                Profile
+              </Link>
+              <button
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-white/5 w-full text-left"
+                onClick={() => {
+                  // Add logout logic here
+                  localStorage.removeItem('token');
+                  window.location.href = '/';
+                  setProfileOpen(false);
+                }}
+              >
+                <FiLogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>

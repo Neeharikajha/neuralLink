@@ -1,0 +1,278 @@
+# NeuralLink API Testing Guide
+# Use these Postman requests to test the application
+
+## Base URL
+http://localhost:5000
+
+## 1. Authentication
+
+### Signup
+POST {{base_url}}/auth/signup
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "password123",
+  "role": "customer"
+}
+
+### Login
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "password123"
+}
+
+### GitHub OAuth URL
+GET {{base_url}}/auth/github/auth-url
+
+### GitHub Profile (after GitHub auth)
+GET {{base_url}}/auth/github/profile
+Authorization: Bearer {{token}}
+
+## 2. Projects
+
+### Create Project (User 1)
+POST {{base_url}}/api/projects
+Authorization: Bearer {{user1_token}}
+Content-Type: application/json
+
+{
+  "title": "AI Chat Application",
+  "description": "A modern chat application with AI integration",
+  "techStack": ["React", "Node.js", "MongoDB", "OpenAI"],
+  "requirements": "Experience with React and Node.js required",
+  "tags": ["AI", "Chat", "Web App"],
+  "difficulty": "intermediate",
+  "timeCommitment": "part-time",
+  "projectUrl": "https://github.com/user1/ai-chat",
+  "repositoryUrl": "https://github.com/user1/ai-chat"
+}
+
+### Get All Projects
+GET {{base_url}}/api/projects
+
+### Get Project by ID
+GET {{base_url}}/api/projects/{{project_id}}
+
+### Get User's Projects
+GET {{base_url}}/api/projects/user/my-projects
+Authorization: Bearer {{token}}
+
+## 3. Join Requests
+
+### Request to Join Project (User 2)
+POST {{base_url}}/api/join-requests
+Authorization: Bearer {{user2_token}}
+Content-Type: application/json
+
+{
+  "projectId": "{{project_id}}",
+  "message": "I'm interested in contributing to this project. I have experience with React and Node.js."
+}
+
+### Get All Join Requests
+GET {{base_url}}/api/join-requests
+Authorization: Bearer {{token}}
+
+### Get User's Join Requests
+GET {{base_url}}/api/join-requests/user/my-requests
+Authorization: Bearer {{token}}
+
+### Get Project Join Requests (for project owner)
+GET {{base_url}}/api/join-requests/project/{{project_id}}
+Authorization: Bearer {{token}}
+
+### Approve Join Request
+PUT {{base_url}}/api/join-requests/{{request_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "action": "approve"
+}
+
+### Reject Join Request
+PUT {{base_url}}/api/join-requests/{{request_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "action": "reject",
+  "rejectionReason": "Not enough experience with the required technologies"
+}
+
+## 4. Scoring
+
+### Get User Score
+GET {{base_url}}/api/scoring/user-score
+Authorization: Bearer {{token}}
+
+### Get Contribution Data
+GET {{base_url}}/api/scoring/contribution-data
+Authorization: Bearer {{token}}
+
+### Calculate Compatibility Score
+POST {{base_url}}/api/scoring/compatibility
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "projectTopics": ["React", "Node.js", "MongoDB"],
+  "adminTopics": ["JavaScript", "Web Development"]
+}
+
+## 5. Testing Scenarios
+
+### Scenario 1: Complete Project Flow
+1. User 1 signs up and logs in
+2. User 1 creates a project
+3. User 2 signs up and logs in (different device/browser)
+4. User 2 views projects and requests to join
+5. User 1 sees the request in FindTeammates > Join Requests tab
+6. User 1 approves/rejects the request
+7. User 2 sees updated status
+
+### Scenario 2: Multiple Users
+1. User 1 creates project
+2. User 2 requests to join
+3. User 3 requests to join
+4. User 1 sees both requests with scores
+5. User 1 approves User 2, rejects User 3
+6. Check that User 2 is now a contributor, User 3 is rejected
+
+### Scenario 3: GitHub Integration
+1. User logs in with GitHub OAuth
+2. Check that GitHub profile data is populated
+3. Verify scoring works with real GitHub data
+4. Test profile page shows GitHub information
+
+## 6. Environment Variables for Testing
+
+### Frontend (.env)
+VITE_API_URL=http://localhost:5000
+
+### Backend (.env)
+MONGODB_URI=mongodb://localhost:27017/neurallink
+JWT_SECRET=your_jwt_secret_here
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+CLIENT_URL=http://localhost:5173
+
+## 7. Testing Different Devices
+
+### Device 1 (User 1 - Project Owner)
+1. Open http://localhost:5173
+2. Sign up/login
+3. Create project
+4. Go to FindTeammates > Join Requests tab
+5. See incoming requests
+
+### Device 2 (User 2 - Contributor)
+1. Open http://localhost:5173 in different browser/device
+2. Sign up/login with different email
+3. Go to Join Project
+4. Request to join User 1's project
+5. Check status updates
+
+### Device 3 (User 3 - Another Contributor)
+1. Open http://localhost:5173 in another browser/device
+2. Sign up/login with different email
+3. Request to join same project
+4. Compare scores and see different results
+
+## 8. Chat System (Future Implementation)
+
+### Create Chat Room
+POST {{base_url}}/api/chat/rooms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Project Discussion",
+  "description": "Chat for AI Chat Application project",
+  "projectId": "{{project_id}}"
+}
+
+### Join Chat Room with Code
+POST {{base_url}}/api/chat/join
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomCode": "ABC123"
+}
+
+### Send Message
+POST {{base_url}}/api/chat/messages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roomId": "{{room_id}}",
+  "content": "Hello team!",
+  "messageType": "text"
+}
+
+## 9. Common Issues and Solutions
+
+### Issue: "ProjectCard is not defined"
+Solution: Make sure to import ProjectCard in JoinProject.jsx
+
+### Issue: "Cannot read properties of undefined"
+Solution: Check that user is logged in and has valid token
+
+### Issue: "GitHub profile not found"
+Solution: Make sure user has connected GitHub account via OAuth
+
+### Issue: "Join requests not showing"
+Solution: Check that user is the project owner and requests are pending
+
+## 10. Database Collections
+
+### Users (AuthDetails)
+- email, password, role, authProvider, isVerified
+
+### GitHub Profiles
+- userId, githubId, username, displayName, avatar, repos, etc.
+
+### Projects
+- title, description, techStack, owner, currentContributors, etc.
+
+### Join Requests
+- project, requester, status, scores, message, etc.
+
+## 11. Real-time Testing
+
+### Test Score Updates
+1. User joins project
+2. Check that project contributor count updates
+3. Verify scores recalculate for new team members
+4. Test real-time updates across devices
+
+### Test Admin Actions
+1. Project owner approves/rejects requests
+2. Check that status updates immediately
+3. Verify notifications work (if implemented)
+
+## 12. Performance Testing
+
+### Load Testing
+- Create multiple projects
+- Generate many join requests
+- Test with large datasets
+- Monitor response times
+
+### Concurrent Users
+- Multiple users joining same project
+- Simultaneous admin actions
+- Real-time updates under load
+
+## Notes:
+- Replace {{token}} with actual JWT token from login response
+- Replace {{project_id}} with actual project ID from create project response
+- Replace {{request_id}} with actual request ID from join request response
+- Use different email addresses for different users
+- Test on different browsers/devices for multi-device scenarios

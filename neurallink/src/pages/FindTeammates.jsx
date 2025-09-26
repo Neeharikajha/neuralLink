@@ -192,7 +192,7 @@ export default function FindTeammates() {
 
   // Filter join requests for projects owned by current user
   const myProjectRequests = joinRequests.filter(request => 
-    request.project.owner._id === user?.id
+    request.project.owner._id === user?.id && request.status === 'pending'
   );
 
   if (loading) {

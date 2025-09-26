@@ -33,13 +33,6 @@ export default function ActiveProjectCard({ name, description, tags = [], progre
           ))}
         </div>
 
-        <div className="mt-1">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Progress</span>
-            <span className="text-sm text-gray-300">{progress}%</span>
-          </div>
-          <GradientProgress value={progress} />
-        </div>
       </div>
     </CardShell>
   );

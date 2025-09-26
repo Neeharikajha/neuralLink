@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
 import FilterBar from "../components/join/FilterBar";
-import ProjectGrid from "../components/join/ProjectGrid";
+import ProjectCard from "../components/join/ProjectCard";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

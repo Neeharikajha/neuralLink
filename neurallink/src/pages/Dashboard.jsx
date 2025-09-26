@@ -5,7 +5,7 @@ import githubService from "../services/githubService";
 import ActiveProjectCard from "../components/dashboard/ActiveProjectCard";
 import TechStacksCard from "../components/dashboard/TechStacksCard";
 import QuickStats from "../components/dashboard/QuickStats";
-import RecentActivity from "../components/dashboard/RecentActivity";
+import ContributionGraph from "../components/dashboard/ContributionGraph";
 import { Box, CircularProgress, Alert, Button } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
@@ -127,8 +127,8 @@ export default function Dashboard() {
               value: githubProfile?.followers || 0 
             },
             { 
-              label: "User Score", 
-              value: userScore?.totalScore || 0 
+              label: "Active Days", 
+              value: Math.floor(Math.random() * 365) + 1 // Mock data for now
             },
           ]}
         />
@@ -143,10 +143,9 @@ export default function Dashboard() {
               progress={62}
             />
 
-            {/* Recent Activity */}
-            <RecentActivity
+            {/* Contribution Graph */}
+            <ContributionGraph
               githubProfile={githubProfile}
-              userScore={userScore}
             />
           </div>
 

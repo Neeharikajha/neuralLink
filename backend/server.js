@@ -263,6 +263,7 @@ app.use("/api/scoring", scoringRoutes);
 app.use("/api/ideas", ideasRouter); // ✅ new route
 app.use("/api/projects", projectRoutes);
 app.use("/api/join-requests", joinRequestRoutes);
+app.use("/api/chat", chatRoutes);
 
 // Socket.IO setup with CORS
 const io = new Server(server, {
