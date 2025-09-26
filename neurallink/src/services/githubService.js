@@ -79,16 +79,16 @@ class GitHubService {
     }
   }
 
-  // Get GitHub contribution data (mock for now, would need GitHub API integration)
+  // Get GitHub contribution data
   async getContributionData() {
     try {
-      // This would ideally fetch from GitHub API
-      // For now, return mock data
-      const mockData = this.generateMockContributionData();
-      return { data: mockData };
+      const response = await this.api.get('/api/scoring/contribution-data');
+      return response.data;
     } catch (error) {
       console.error('Error fetching contribution data:', error);
-      throw error;
+      // Fallback to mock data if API fails
+      const mockData = this.generateMockContributionData();
+      return { data: mockData };
     }
   }
 

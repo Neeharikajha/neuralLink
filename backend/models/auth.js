@@ -1,13 +1,6 @@
 import mongoose from "mongoose";
 
 const authSchema = new mongoose.Schema({
-    phone: {
-        type: String,
-        required: false,
-        unique: true,
-        sparse: true,
-        minlength: 10
-    },
     email: {
         type: String,
         required: false,
@@ -21,9 +14,9 @@ const authSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ["customer"], // farmer hata diya
+        enum: ["customer"],
         required: true,
-        default: "customer" // optional, default to customer
+        default: "customer"
     },
     authProvider: {
         type: String,

@@ -1,74 +1,46 @@
 // src/pages/JoinProject.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import axios from "axios";
 import FilterBar from "../components/join/FilterBar";
 import ProjectGrid from "../components/join/ProjectGrid";
 
-// demo dataset – replace with API data later
-const SEED_PROJECTS = [
-  {
-    id: "nl-collab",
-    title: "NeuralLink Collab Hub",
-    description: "Real‑time teammate matching, profiles, and AI suggestions.",
-    tech: ["Next.js", "Tailwind", "Node", "Postgres"],
-    owner: "Ari",
-    stars: 128,
-    issues: 12,
-    // scores out of 100
-    userScore: 92,
-    compatibility: 88,
-    updatedAt: "2025-09-07",
-  },
-  {
-    id: "finops-kit",
-    title: "FinOps Dashboard",
-    description: "Multi-cloud cost analytics with anomaly alerts.",
-    tech: ["React", "Express", "MongoDB"],
-    owner: "Tejas",
-    stars: 310,
-    issues: 5,
-    userScore: 84,
-    compatibility: 76,
-    updatedAt: "2025-09-05",
-  },
-  {
-    id: "ai-prompter",
-    title: "AI Prompter + Vector DB",
-    description: "Prompt library and embeddings search with LangChain.",
-    tech: ["Python", "FastAPI", "Postgres", "LangChain"],
-    owner: "Landon",
-    stars: 72,
-    issues: 9,
-    userScore: 79,
-    compatibility: 81,
-    updatedAt: "2025-09-04",
-  },
-  {
-    id: "devtools-trace",
-    title: "DevTools Trace Viewer",
-    description: "Web performance trace visualizer and CI comments.",
-    tech: ["Next.js", "Tailwind", "Rust", "WASM"],
-    owner: "Kai",
-    stars: 205,
-    issues: 22,
-    userScore: 68,
-    compatibility: 73,
-    updatedAt: "2025-09-03",
-  },
-];
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function JoinProject() {
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [stack, setStack] = useState("All");
-  const [sortKey, setSortKey] = useState("userScore"); // userScore | compatibility | stars | updated
+  const [sortKey, setSortKey] = useState("createdAt"); // createdAt | title | owner
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_BASE_URL}/api/projects`);
+      setProjects(response.data.projects);
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+      setError("Failed to load projects");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const allStacks = useMemo(() => {
     const s = new Set();
-    SEED_PROJECTS.forEach((p) => p.tech.forEach((t) => s.add(t)));
+    projects.forEach((p) => p.techStack.forEach((t) => s.add(t)));
     return ["All", ...Array.from(s)];
-  }, []);
+  }, [projects]);
 
-  const projects = useMemo(() => {
-    let list = [...SEED_PROJECTS];
+  const filteredProjects = useMemo(() => {
+    let list = [...projects];
 
     // filter by query
     const q = query.trim().toLowerCase();
@@ -77,26 +49,43 @@ export default function JoinProject() {
         (p) =>
           p.title.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q) ||
-          p.owner.toLowerCase().includes(q) ||
-          p.tech.join(" ").toLowerCase().includes(q)
+          p.owner.email.toLowerCase().includes(q) ||
+          p.techStack.join(" ").toLowerCase().includes(q)
       );
     }
 
     // filter by stack
     if (stack !== "All") {
-      list = list.filter((p) => p.tech.includes(stack));
+      list = list.filter((p) => p.techStack.includes(stack));
     }
 
     // sort
     list.sort((a, b) => {
-      if (sortKey === "updated") {
-        return new Date(b.updatedAt) - new Date(a.updatedAt);
+      if (sortKey === "createdAt") {
+        return new Date(b.createdAt) - new Date(a.createdAt);
       }
-      return (b[sortKey] ?? 0) - (a[sortKey] ?? 0);
+      if (sortKey === "title") {
+        return a.title.localeCompare(b.title);
+      }
+      if (sortKey === "owner") {
+        return a.owner.email.localeCompare(b.owner.email);
+      }
+      return 0;
     });
 
     return list;
-  }, [query, stack, sortKey]);
+  }, [projects, query, stack, sortKey]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0b1020] text-gray-200 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p>Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0b1020] text-gray-200">
@@ -112,6 +101,12 @@ export default function JoinProject() {
           </p>
         </header>
 
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
+
         <FilterBar
           query={query}
           onQuery={setQuery}
@@ -122,7 +117,7 @@ export default function JoinProject() {
           onSortKey={setSortKey}
         />
 
-        <ProjectGrid projects={projects} />
+        <ProjectGrid projects={filteredProjects} />
       </div>
     </div>
   );

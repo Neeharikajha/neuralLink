@@ -39,10 +39,9 @@ export default function FilterBar({
             className="rounded-md bg-[#111527] text-gray-100
                        border border-white/10 px-3 py-2.5 focus:outline-none"
           >
-            <option className="bg-[#0b1020] text-gray-100" value="userScore">My score</option>
-            <option className="bg-[#0b1020] text-gray-100" value="compatibility">Compatibility</option>
-            <option className="bg-[#0b1020] text-gray-100" value="stars">Stars</option>
-            <option className="bg-[#0b1020] text-gray-100" value="updated">Recently updated</option>
+            <option className="bg-[#0b1020] text-gray-100" value="createdAt">Recently created</option>
+            <option className="bg-[#0b1020] text-gray-100" value="title">Title A-Z</option>
+            <option className="bg-[#0b1020] text-gray-100" value="owner">Owner A-Z</option>
           </select>
         </div>
       </div>

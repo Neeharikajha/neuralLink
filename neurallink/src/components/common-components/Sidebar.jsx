@@ -113,7 +113,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  FiHome, FiUsers, FiMessageCircle, FiFolderPlus,
+  FiHome, FiUsers, FiMessageCircle, FiFolderPlus, FiSettings,
   FiMenu, FiX, FiUser, FiLogOut
 } from "react-icons/fi";
 
@@ -122,6 +122,7 @@ const MAIN_MENU = [
   { label: "Find Teammates", icon: FiUsers, path: "/find" },
   { label: "Join Project", icon: FiFolderPlus, path: "/join-project" },
   { label: "Chat", icon: FiMessageCircle, path: "/chat" },
+  { label: "Admin", icon: FiSettings, path: "/admin" },
 ];
 
 export default function Sidebar() {

@@ -1,6 +1,7 @@
 import GitHub from "../models/github.js";
 import Auth from "../models/auth.js";
 import axios from "axios";
+import { calculateUserScore as mlCalculateUserScore, calculateCompatibilityScore as mlCalculateCompatibilityScore, getContributionData as mlGetContributionData } from "../services/mlService.js";
 
 // Calculate user score based on GitHub data
 export const calculateUserScore = async (req, res) => {
@@ -12,8 +13,8 @@ export const calculateUserScore = async (req, res) => {
             return res.status(404).json({ message: "GitHub profile not found" });
         }
 
-        // Calculate score based on GitHub data
-        const score = calculateScore(githubProfile);
+        // Calculate score using ML service
+        const score = await mlCalculateUserScore(githubProfile);
         
         res.status(200).json({
             message: "Score calculated successfully",
@@ -166,3 +167,26 @@ function calculateRelevance(topics1, topics2) {
     
     return intersection.size / union.size;
 }
+
+// Get contribution data for dashboard
+export const getContributionData = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const githubProfile = await GitHub.findOne({ userId });
+        if (!githubProfile) {
+            return res.status(404).json({ message: "GitHub profile not found" });
+        }
+
+        // Get contribution data using ML service
+        const contributionData = await mlGetContributionData(githubProfile);
+        
+        res.status(200).json({
+            message: "Contribution data retrieved successfully",
+            data: contributionData
+        });
+    } catch (error) {
+        console.error("Error getting contribution data:", error);
+        res.status(500).json({ message: "Failed to get contribution data", error: error.message });
+    }
+};

@@ -212,6 +212,8 @@ import chatRoutes from "./routes/chat.js";
 import scoringRoutes from "./routes/scoring.js";
 import { ChatRoom } from "./models/chat.js";
 import ideasRouter from "./routes/ideas.js"; // ✅ new import
+import projectRoutes from "./routes/projects.js";
+import joinRequestRoutes from "./routes/joinRequests.js";
 
 dotenv.config();
 
@@ -259,6 +261,8 @@ app.use("/auth", authRoutes);
 app.use("/chat", chatRoutes);
 app.use("/api/scoring", scoringRoutes);
 app.use("/api/ideas", ideasRouter); // ✅ new route
+app.use("/api/projects", projectRoutes);
+app.use("/api/join-requests", joinRequestRoutes);
 
 // Socket.IO setup with CORS
 const io = new Server(server, {

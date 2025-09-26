@@ -115,73 +115,59 @@
 
 
 
-// src/pages/Find.jsx
-import React, { useMemo, useState, useEffect } from "react";
-import IdeaModal from "../components/find/IdeaModal";
-import IdeaCard from "../components/find/IdeaCard";
+// src/pages/FindTeammates.jsx
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import axios from "axios";
 
-// demo seed candidates (could be fetched later)
-const SEED_CANDIDATES = [
-  {
-    id: "ari-01",
-    name: "Ari",
-    note: "FinOps dashboard in Next.js",
-    score: 92,
-    github: "https://github.com/example/ari",
-    profile: "/profile/ari-01",
-    skills: ["Next.js", "Tailwind", "Node"],
-    timezones: ["IST"],
-  },
-  {
-    id: "tejas-02",
-    name: "Tejas",
-    note: "Open to devtools collab",
-    score: 87,
-    github: "https://github.com/example/tejas",
-    profile: "/profile/tejas-02",
-    skills: ["React", "Express", "MongoDB"],
-    timezones: ["IST"],
-  },
-  {
-    id: "landon-03",
-    name: "Landon",
-    note: "AI prompts + vector DB",
-    score: 81,
-    github: "https://github.com/example/landon",
-    profile: "/profile/landon-03",
-    skills: ["Python", "Postgres", "LangChain"],
-    timezones: ["PST"],
-  },
-];
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-export default function Find() {
+export default function FindTeammates() {
+  const { user, githubProfile } = useAuth();
   const [open, setOpen] = useState(false);
-  const [ideas, setIdeas] = useState([]);
-  const candidates = useMemo(() => SEED_CANDIDATES, []);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // fetch ideas on mount
+  // fetch projects on mount
   useEffect(() => {
-    fetch("/api/ideas")
-      .then((res) => res.json())
-      .then((data) => setIdeas(data))
-      .catch((err) => console.error("Failed to fetch ideas:", err));
+    fetchProjects();
   }, []);
 
-  // submit new idea
-  async function handleSubmitIdea(payload) {
+  const fetchProjects = async () => {
     try {
-      const res = await fetch("/api/ideas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Failed to post idea");
-      const newIdea = await res.json();
-      setIdeas((prev) => [newIdea, ...prev]);
+      setLoading(true);
+      const response = await axios.get(`${API_BASE_URL}/api/projects`);
+      setProjects(response.data.projects);
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+      setError("Failed to load projects");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // submit new project
+  async function handleSubmitProject(payload) {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/projects`, payload);
+      setProjects((prev) => [response.data.project, ...prev]);
       setOpen(false);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to create project:", err);
+      setError("Failed to create project");
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0b1020] text-gray-200 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p>Loading projects...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -194,7 +180,7 @@ export default function Find() {
             </span>
           </h1>
           <p className="text-gray-400 mt-1">
-            Post an idea and collaborate with matched builders.
+            Post a project and collaborate with matched builders.
           </p>
         </header>
 
@@ -207,35 +193,40 @@ export default function Find() {
                        hover:from-fuchsia-400 hover:to-orange-300
                        border border-white/10 backdrop-blur-md transition"
           >
-            Post your idea
+            Post your project
           </button>
         </div>
 
-        {/* Posted ideas as cards */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
+
+        {/* Posted projects as cards */}
         <div className="space-y-6">
-          {ideas.length === 0 && (
+          {projects.length === 0 && (
             <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md p-6">
               <p className="text-gray-400">
-                No ideas yet. Use “Post your idea” to get started.
+                No projects yet. Use "Post your project" to get started.
               </p>
             </div>
           )}
 
-          {ideas.map((idea) => (
-            <IdeaCard
-              key={idea._id || idea.id}
-              idea={idea}
-              allCandidates={candidates}
+          {projects.map((project) => (
+            <ProjectCard
+              key={project._id}
+              project={project}
             />
           ))}
         </div>
       </div>
 
       {/* Modal */}
-      <IdeaModal
+      <ProjectModal
         open={open}
         onClose={() => setOpen(false)}
-        onSubmit={handleSubmitIdea}
+        onSubmit={handleSubmitProject}
       />
     </div>
   );
